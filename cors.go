@@ -26,6 +26,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"github.com/julienschmidt/httprouter"
 )
 
 // Options is a configuration container to setup the CORS middleware.
@@ -186,6 +187,20 @@ func (c *Cors) ServeHTTP(w http.ResponseWriter, r *http.Request, next http.Handl
 		c.logf("ServeHTTP: Actual request")
 		c.handleActualRequest(w, r)
 		next(w, r)
+	}
+}
+
+// httprouter compatible interface
+func (c *Cors) Handle(handler httprouter.Handle) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		if r.Method == "OPTIONS" {
+			c.logf("Handler: Preflight request")
+			c.handlePreflight(w, r)
+		} else {
+			c.logf("Handler: Actual request")
+			c.handleActualRequest(w, r)
+			handler(w, r, ps)
+		}
 	}
 }
 
